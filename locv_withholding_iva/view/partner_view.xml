@@ -27,7 +27,7 @@
         <record id="res_partner_wh_iva" model="ir.ui.view">
             <field name="name">res.partner.wh.iva</field>
             <field name="model">res.partner</field>
-            <field name="inherit_id" ref="3mit_base_withholdings.wh_partner"/>
+            <field name="inherit_id" ref="locv_base_withholdings.wh_partner"/>
             <field name="arch" type="xml">
                 <xpath expr="//separator[@name='isep']" position="replace">
                      <xpath expr="//separator[@name='isep']" position="attributes">
