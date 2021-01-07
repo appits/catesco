@@ -1,7 +1,7 @@
 # -*- coding: UTF-8 -*-
 
 {
-    "name": "Validaciones y agregación de campos sobre el partner cliente-proveedor",
+    "name": "Documento de Identidad,Partner Individual, Validaciones y Tipo de Persona",
     "version": "1.0",
     "author": "Localizacion Venezolana",
     'depends' : [

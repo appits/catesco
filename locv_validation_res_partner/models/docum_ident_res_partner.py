@@ -31,7 +31,7 @@ class ValidationDocument(models.Model):
     #                                     (u'El Documento no puede ser menor que 7 cifras ni mayor a 20.'))
         if valor:
             if nationality == 'V' or nationality == 'E':
-                if len(valor) == 7 or len(valor) == 8:
+                if len(valor) == 6 or len(valor) == 8:
                     if valor.isdigit() == False:
                         raise exceptions.except_orm(('Advertencia!'), (u'La Cédula solo debe ser Numerico. Por favor corregir para proceder a Crear/Editar el registro'))
                     return
