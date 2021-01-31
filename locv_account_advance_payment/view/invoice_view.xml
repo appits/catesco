@@ -18,6 +18,9 @@
 
                 <xpath expr="//field[@name='currency_id']" position="after">
                     <field name="sum_amount_available" readonly="1" force_save="1" attrs="{'invisible': [('type', 'not in', ('in_invoice', 'in_refund', 'in_receipt'))]}"/>
+                    <field name="currency_company" invisible="True"/>
+                    <field name="sum_amount_available_dolares" readonly="1" force_save="1" attrs="{'invisible': [('type', 'not in', ('in_invoice', 'in_refund', 'in_receipt'))]}"/>
+                    <field name="foreign_currency" invisible="True"/>
                 </xpath>
             </field>
         </record>
@@ -39,7 +42,10 @@
                 </xpath>
 
                 <xpath expr="//field[@name='company_id']" position="after">
-                    <field name="sum_amount_available" readonly="1" force_save="1" attrs="{'invisible': [('type', 'not in', ('out_invoice', 'out_refund', 'out_receipt'))]}"/>
+                    <field name="sum_amount_available" readonly="1" force_save="1" attrs="{'invisible': [('type', 'not in', ('out_invoice', 'out_refund', 'out_receipt'))]}" widget='monetary' options="{'currency_field': 'currency_company'}"/>
+                    <field name="currency_company" invisible="True"/>
+                    <field name="sum_amount_available_dolares" readonly="1" force_save="1" attrs="{'invisible': [('type', 'not in', ('out_invoice', 'out_refund', 'out_receipt'))]}"/>
+                    <field name="foreign_currency" invisible="True"/>
                 </xpath>
             </field>
         </record>

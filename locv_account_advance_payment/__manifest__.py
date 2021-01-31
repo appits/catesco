@@ -8,10 +8,9 @@
 Registro de Anticipos para ser aplicados a las facturas de clientes y proveedores,
 asi como los reversos de los mismos.
 ============================
-Colaborador: Nathaly Partidas
 ''',
-    'author': 'TYSAMNCA',
-    'website': 'https://tysamnca.com',
+    'author': 'Localizacion Venezolana',
+    'website': '',
     #data, es una lista donde se agregan todas las vistas del módulo, es decir los archivos.xml y archivos.csv.
     'data': [
              'security/ir.model.access.csv',

@@ -23,7 +23,7 @@ class AccountAdvancePayment(models.Model):
     apply_journal_id = fields.Many2one('account.journal', string='Journal applied', related='partner_id.journal_advanced_id')
     bank_account_id = fields.Many2one('account.journal',string='Bank')
     advance_account_id = fields.Many2one('account.journal',string='Bank')
-    payment_id = fields.Many2one('payment.acquirer',string='Payment Methods')
+    payment_id = fields.Char(string='Payment Methods')
     date_advance = fields.Date(string='Advance Date')
     currency_id = fields.Many2one('res.currency', string='Currency')
     amount_advance = fields.Monetary(string="Amount advance")
@@ -44,14 +44,34 @@ class AccountAdvancePayment(models.Model):
     asiento_conciliado = fields.One2many('account.move.line', related='move_id.line_ids', string='Asientos contables', readonly=True)
     asiento_conl_apply = fields.One2many('account.move.line', related='move_apply_id.line_ids', string='Asientos contables',
                                          readonly=True)
-
-    amount_available = fields.Monetary("Amount Available")
+    amount_available_conversion = fields.Monetary("Conversión Monto Disponible", currency_field='conversion_currency', store=True)
+    amount_available = fields.Monetary("Amount Available", currency_field='currency_id')
     date_apply = fields.Date(string='Date apply')
     invoice_id = fields.Many2one('account.move',string='Invoice')
-    amount_invoice = fields.Monetary(string='Amount Invoice',compute='_compute_amount_invoice')
-    amount_apply = fields.Monetary(string='Amount Apply')
+    amount_invoice = fields.Monetary(string='Amount Invoice',compute='_compute_amount_invoice', currency_field='invoice_currency')
+    invoice_currency = fields.Many2one('res.currency', string='Invoice Currency')
+    conversion_currency = fields.Many2one('res.currency', string='Conversion Currency')
+    amount_currency_apply = fields.Many2one('res.currency', string='Moneda del monto', store=True)
+    amount_apply = fields.Monetary(string='Amount Apply', currency_field='amount_currency_apply')
     is_customer = fields.Boolean("Is customer", default= True)
     is_supplier = fields.Boolean("Is Supplier", default=True)
+    rate = fields.Float(digits=0, default=1.0, help='Tasa de registro del anticipo')
+    tasa_anticipo = fields.Many2one('res.currency.rate', string='Tasa con la que se registró el anticipo')
+    type_advance = fields.Boolean(default=False)
+
+    @api.onchange('date_apply')
+    def onchange_date_apply(self):
+        currency_rate = self.env['res.currency.rate'].search([
+            ('currency_id', '=', self.env.company.currency_id.id),
+            ('name', '=', self.date_apply),
+        ]).rate
+        if self.currency_id.name == self.env.company.currency_id.name:
+            if not currency_rate:
+                self.amount_available_conversion = 0
+            else:
+                self.amount_available_conversion = self.amount_available / currency_rate
+        else:
+            self.amount_available_conversion = self.amount_available * self.rate
 
     def validate_amount_advance(self):
         if self.amount_advance <= 0:
@@ -68,7 +88,17 @@ class AccountAdvancePayment(models.Model):
     @api.depends('invoice_id')
     def _compute_amount_invoice(self):
         '''Actualiza el campo de monto de la faltura con el saldo de la factura'''
+        self.invoice_currency = self.invoice_id.currency_id
         self.amount_invoice = self.invoice_id.amount_residual
+        if self.invoice_id:
+            if not self.date_apply:
+                raise exceptions.Warning(_('Establezca la fecha de aplicación'))
+            if self.currency_id.name == self.env.company.currency_id.name:
+                self.conversion_currency = self.env['res.currency'].search([
+                    ('name', '=', 'USD')
+                ])
+            else:
+                self.conversion_currency = self.env.company.currency_id
 
     def unlink(self):
         '''convierte a borrador la vista para ser editada'''
@@ -115,13 +145,55 @@ class AccountAdvancePayment(models.Model):
 
         amount_apply = float(vals.get('amount_apply')) if vals.get('amount_apply',False) else 0.00
         amount_invoice = float(vals.get('amount_invoice')) if vals.get('amount_invoice', False) else 0.00
+        date_apply = vals.get('date_apply')
+        invoice_currency = vals.get('invoice_currency')
+        amount_available = vals.get('amount_available')
+        amount_currency_apply = vals.get('amount_currency_apply')
+        amount_available_conversion = vals.get('amount_available_conversion')
 
-        if amount_apply > self.amount_available:
-            raise Warning(_('El monto a aplicar (%s) no puede ser mayor al monto disponible (%s)') % (amount_apply, self.amount_available))
+        if amount_currency_apply == self.currency_id.id:
+            if amount_apply > amount_available:
+                raise Warning(_('El monto a aplicar (%s) no puede ser mayor al monto disponible (%s)') % (amount_apply, self.amount_available))
 
-        if amount_apply > amount_invoice:
-            raise Warning(_('El monto a aplicar (%s) no puede ser mayor al monto de la factura (%s)') % (amount_apply, amount_invoice))
-
+        else:
+            if amount_apply > amount_available_conversion:
+                raise Warning(_('El monto a aplicar (%s) no puede ser mayor al monto disponible (%s)') % (
+                amount_apply, amount_available_conversion))
+        if amount_currency_apply == invoice_currency:
+            if amount_apply > amount_invoice:
+                raise Warning(_('El monto a aplicar (%s) no puede ser mayor al monto de la factura (%s)') % (
+                amount_apply, amount_invoice))
+        else:
+            currency_rate = self.env['res.currency.rate'].search([
+                ('currency_id', '=', self.env.company.currency_id.id),
+                ('name', '=',date_apply),
+            ]).rate
+            if amount_currency_apply == self.env.company.currency_id.id:
+                if self.currency_id.id == self.env.company.currency_id.id:
+                    if not currency_rate:
+                        raise Warning(_('Registre una tasa de cambio para la fecha de aplicación'))
+                    conversion = amount_apply / currency_rate
+                    if conversion > amount_invoice:
+                        raise Warning(_('El monto a aplicar (%s) no puede ser mayor al monto de la factura (%s)') % (
+                            conversion, amount_invoice))
+                else:
+                    conversion = amount_apply / self.rate
+                    if conversion > amount_invoice:
+                        raise Warning(_('El monto a aplicar (%s) no puede ser mayor al monto de la factura (%s)') % (
+                            conversion, amount_invoice))
+            else:
+                if self.currency_id == self.env.company.currency_id.id:
+                    if not currency_rate:
+                        raise Warning(_('Registre una tasa de cambio para la fecha de aplicación'))
+                    conversion = amount_apply * currency_rate
+                    if conversion > amount_invoice:
+                        raise Warning(_('El monto a aplicar (%s) no puede ser mayor al monto de la factura (%s)') % (
+                            conversion, amount_invoice))
+                else:
+                    conversion = amount_apply * self.rate
+                    if conversion > amount_invoice:
+                        raise Warning(_('El monto a aplicar (%s) no puede ser mayor al monto de la factura (%s)') % (
+                            conversion, amount_invoice))
         return True
 
     @api.depends('partner_id', 'journal_id', 'partner_id', 'date_advance')
@@ -138,6 +210,8 @@ class AccountAdvancePayment(models.Model):
             if self.amount_available > 0:
                 self.copy()
                 self.state = 'paid'
+                
+
 
     def write(self, vals):
         '''sobreescritura del boton editar '''
@@ -147,26 +221,59 @@ class AccountAdvancePayment(models.Model):
                 #isisntance es una funcion que pregunta si es una instancia y la convierte a intero
                 if isinstance(local_invoice_id, int):
                     local_invoice_id = self.env['account.move'].browse(local_invoice_id)
-                #if not vals.get('amount_apply', False):
-                #    vals.update({'amount_apply':self.amount_apply})
+                if not vals.get('amount_apply', False):
+                    vals.update({'amount_apply':self.amount_apply})
                 if not vals.get('amount_available', False):
                     vals.update({'amount_available':self.amount_available})
                 if not vals.get('amount_invoice', False):
                     vals.update({'amount_invoice':local_invoice_id.amount_residual})
-
+                if not vals.get('amount_currency_apply', False):
+                    vals.update({'amount_currency_apply':self.amount_currency_apply.id})
+                if not vals.get('amount_available_conversion', False):
+                    vals.update({'amount_available_conversion':self.amount_available_conversion})
+                if not vals.get('date_apply', False):
+                    vals.update({'date_apply':self.date_apply})
                 if self.validate_amount(vals):
                     amount_apply = vals.get('amount_apply')
-                    self.amount_available = self.amount_available - amount_apply
-                    vals.update({'amount_available': self.amount_available})
+                    amount_currency_apply = vals.get('amount_currency_apply')
+                    if amount_currency_apply == self.currency_id.id:
+                        self.amount_available = self.amount_available - amount_apply
+                        vals.update({'amount_available': self.amount_available})
+                    else:
+                        date_apply = vals.get('date_apply') if vals.get('date_apply', False) else self.date_apply
+                        currency_rate = self.env['res.currency.rate'].search([
+                            ('currency_id', '=', self.env.company.currency_id.id),
+                            ('name', '=', date_apply),
+                        ]).rate
+                        if amount_currency_apply == self.env.company.currency_id.id:
+                            conversion = amount_apply / self.rate
+                            self.amount_available = self.amount_available - conversion
+                            vals.update({'amount_available': self.amount_available})
+                        else:
+                            conversion = amount_apply * currency_rate
+                            self.amount_available = self.amount_available - conversion
+                            vals.update({'amount_available': self.amount_available})
 
                 else:
                     self.state = 'paid'
 
         if vals.get('amount_advance'):
             if self.state == 'draft':
-                self.amount_available = self.amount_advance - self.amount_apply
+                if vals.get('amount_currency_apply') == self.currency_id.id:
+                    self.amount_available = self.amount_advance - self.amount_apply
+                else:
+                    currency_rate = self.env['res.currency.rate'].search([
+                        ('currency_id', '=', self.env.company.currency_id.id),
+                        ('name', '=', vals.get('date_apply')),
+                    ]).rate
+                    if vals.get('amount_currency_apply') == self.env.company.currency_id.id:
+                        conversion = self.amount_apply / currency_rate
+                        self.amount_available = self.amount_advance - conversion
+                    else:
+                        conversion = self.amount_apply * currency_rate
+                        self.amount_available = self.amount_advance - conversion
                 vals.update({'amount_available': self.amount_available,
-                             'is_supplier':(self.partner_id.es_cliente == False),
+                             'is_supplier':self.partner_id.es_proveedor,
                              'is_customer':self.partner_id.es_cliente})
 
         return super(AccountAdvancePayment, self).write(vals)
@@ -193,7 +300,7 @@ class AccountAdvancePayment(models.Model):
         is_supplier = None
 
         # if self.is_customer and self.state == 'draft':
-        if self.partner_id.es_cliente and self.state == 'draft':
+        if self.partner_id.es_cliente and self.state == 'draft' and self.type_advance == False:
             cuenta_deudora = self.bank_account_id.default_debit_account_id.id
             cuenta_acreedora = self.partner_id.account_advance_payment_sales_id.id
             partner_id = self.partner_id.id
@@ -202,7 +309,7 @@ class AccountAdvancePayment(models.Model):
             self.is_supplier = False
 
         # elif self.is_supplier and self.state == 'draft':
-        elif (self.partner_id.es_cliente == False) and self.state == 'draft':
+        elif self.partner_id.es_proveedor and self.state == 'draft' and self.type_advance:
             cuenta_deudora = self.partner_id.account_advance_payment_purchase_id.id
             cuenta_acreedora = self.bank_account_id.default_debit_account_id.id
             partner_id = self.partner_id.id
@@ -217,12 +324,12 @@ class AccountAdvancePayment(models.Model):
         cuenta_acreedora = None
         cuenta_deudora = None
 
-        if self.partner_id.es_cliente and self.state in ['posted', 'available', 'paid'] and self.is_customer == True:
+        if self.partner_id.es_cliente and self.state in ['posted', 'available', 'paid'] and self.type_advance == False:
             cuenta_deudora = self.partner_id.property_account_receivable_id.id
             cuenta_acreedora = self.partner_id.account_advance_payment_sales_id.id
 
 
-        elif (self.partner_id.es_cliente == False) and self.state in ['posted', 'available', 'paid'] and self.is_supplier == True:
+        elif self.partner_id.es_proveedor and self.state in ['posted', 'available', 'paid'] and self.type_advance:
             cuenta_deudora = self.partner_id.account_advance_payment_purchase_id.id
             cuenta_acreedora = self.partner_id.property_account_payable_id.id
 
@@ -235,13 +342,13 @@ class AccountAdvancePayment(models.Model):
         partner_id = None
         #sequence_code = None
 
-        if self.partner_id.es_cliente and self.state == 'available':
+        if self.partner_id.es_cliente and self.state == 'available' and self.type_advance == False:
             cuenta_deudora = self.partner_id.account_advance_payment_sales_id.id
             cuenta_acreedora = self.bank_account_id.default_debit_account_id.id
             partner_id = self.partner_id.id
             #sequence_code = 'register.receivable.advance.customer'
 
-        elif (self.partner_id.es_cliente == False) and self.state == 'available':
+        elif self.partner_id.es_proveedor and self.state == 'available' and self.type_advance:
             cuenta_deudora = self.bank_account_id.default_debit_account_id.id
             cuenta_acreedora = self.partner_id.account_advance_payment_purchase_id.id
             partner_id = self.partner_id.id
@@ -255,9 +362,9 @@ class AccountAdvancePayment(models.Model):
 
         cuenta_deudora, cuenta_acreedora,partner_id,sequence_code,is_supplier,is_customer = self.get_account_advance()
         #busca la secuencia del diario y se lo asigno a name
-        if self.partner_id.es_cliente and not cuenta_acreedora:
+        if self.partner_id.es_cliente and not cuenta_acreedora and self.type_advance == False:
                 raise exceptions.Warning(_('El cliente no tiene configurado la cuenta contable de anticipo'))
-        elif self.partner_id.es_cliente == False and not cuenta_deudora:
+        elif self.partner_id.es_proveedor and not cuenta_deudora and self.type_advance:
                 raise exceptions.Warning(_('El socio no tiene configurado la cuenta contable de anticipo'))
 
         else:
@@ -271,47 +378,100 @@ class AccountAdvancePayment(models.Model):
             }
             move_obj = self.env['account.move']
             move_id = move_obj.create(vals)
+            #Si el pago es en moneda extranjera $
+            if self.currency_id.name != self.env.company.currency_id.name:
+                self.rate = currency_rate = self.env['res.currency.rate'].search([
+                    ('currency_id', '=', self.env.company.currency_id.id),
+                    ('name', '=', self.date_advance),
+                ]).rate
+                self.amount_currency_apply = self.env['res.currency'].search([
+                ('name', '=', 'USD')
+                ])
+                if not currency_rate:
+                    raise exceptions.Warning(_('Asegurese de tener la multimoneda confiurada y registrar la tasa de la fecha del anticipo'))
+                money = self.amount_advance
+                self.move_advance_ = {
+                    'account_id': cuenta_acreedora,
+                    'company_id': self.partner_id.company_id.id,
+                    'currency_id': self.currency_id.id,
+                    'date_maturity': False,
+                    'ref': self.ref,
+                    'date': self.date_advance,
+                    'partner_id': self.partner_id.id,
+                    'move_id': move_id.id,
+                    'name': name,
+                    'journal_id': self.journal_id.id,
+                    'credit':  self.amount_advance*currency_rate,
+                    'debit': 0.0,
+                    'amount_currency': -money,
+                }
+                asiento = self.move_advance_
+                move_line_obj = self.env['account.move.line']
+                move_line_id1 = move_line_obj.with_context(check_move_validity=False).create(asiento)
+                asiento['amount_currency'] = money
+                # asiento['currency_id'] = ""
+                asiento['account_id'] = cuenta_deudora
+                asiento['credit'] = 0.0
+                asiento['debit'] = self.amount_advance*currency_rate
+                move_line_id2 = move_line_obj.create(asiento)
+                move_id.action_post()
 
-            self.move_advance_ = {
-                'account_id': cuenta_acreedora,
-                'company_id': self.partner_id.company_id.id,
-                'currency_id': self.currency_id.id,
-                'date_maturity': False,
-                'ref': self.ref,
-                'date': self.date_advance,
-                'partner_id': self.partner_id.id,
-                'move_id': move_id.id,
-                'name': name,
-                'journal_id': self.journal_id.id,
-                'credit':  self.amount_advance,
-                'debit':0.0,
-                'amount_currency': 0,
-            }
-            asiento = self.move_advance_
-            move_line_obj = self.env['account.move.line']
-            move_line_id1 = move_line_obj.with_context(check_move_validity=False).create(asiento)
+                if move_line_id1 and move_line_id2:
+                    # if self.partner_id.es_cliente == False:
+                    # res = {'state': 'available', 'move_id': move_id.id, 'supplier':True, 'amount_available':self.amount_advance,'name':name}
+                    # else:
+                    # res = {'state': 'available', 'move_id': move_id.id, 'customer':True, 'amount_available':self.amount_advance,'name':name}
 
-            asiento['account_id'] = cuenta_deudora
-            asiento['credit'] = 0.0
-            asiento['debit'] = self.amount_advance
+                    # return super(AccountAdvancePayment, self).write(res)
 
-            move_line_id2 = move_line_obj.create(asiento)
-            move_id.action_post()
+                    if self.partner_id.es_proveedor and self.type_advance:
+                        res = {'state': 'available', 'move_id': move_id.id, 'supplier': True,
+                               'amount_available': self.amount_advance, 'name': name, 'is_supplier': True}
+                    else:
+                        res = {'state': 'available', 'move_id': move_id.id, 'customer': True,
+                               'amount_available': self.amount_advance, 'name': name, 'is_customer': True}
 
-            if move_line_id1 and move_line_id2:
-                #if self.partner_id.es_cliente == False:
-                    #res = {'state': 'available', 'move_id': move_id.id, 'supplier':True, 'amount_available':self.amount_advance,'name':name}
-                #else:
-                    #res = {'state': 'available', 'move_id': move_id.id, 'customer':True, 'amount_available':self.amount_advance,'name':name}
+                    return super(AccountAdvancePayment, self).write(res)
+            else:
+                self.amount_currency_apply = self.env.company.currency_id
+                self.move_advance_ = {
+                    'account_id': cuenta_acreedora,
+                    'company_id': self.partner_id.company_id.id,
+                    'date_maturity': False,
+                    'ref': self.ref,
+                    'date': self.date_advance,
+                    'partner_id': self.partner_id.id,
+                    'move_id': move_id.id,
+                    'name': name,
+                    'journal_id': self.journal_id.id,
+                    'credit': self.amount_advance,
+                    'debit': 0.0,
+                }
+                asiento = self.move_advance_
+                move_line_obj = self.env['account.move.line']
+                move_line_id1 = move_line_obj.with_context(check_move_validity=False).create(asiento)
 
-                #return super(AccountAdvancePayment, self).write(res)
+                asiento['account_id'] = cuenta_deudora
+                asiento['credit'] = 0.0
+                asiento['debit'] = self.amount_advance
 
-                if self.partner_id.es_cliente == False:
-                    res = {'state': 'available', 'move_id': move_id.id, 'supplier':True, 'amount_available':self.amount_advance,'name':name, 'is_supplier':True}
-                else:
-                    res = {'state': 'available', 'move_id': move_id.id, 'customer':True, 'amount_available':self.amount_advance,'name':name, 'is_customer':True}
+                move_line_id2 = move_line_obj.create(asiento)
+                move_id.action_post()
 
-                return super(AccountAdvancePayment, self).write(res)
+                if move_line_id1 and move_line_id2:
+                    #if self.partner_id.es_cliente == False:
+                        #res = {'state': 'available', 'move_id': move_id.id, 'supplier':True, 'amount_available':self.amount_advance,'name':name}
+                    #else:
+                        #res = {'state': 'available', 'move_id': move_id.id, 'customer':True, 'amount_available':self.amount_advance,'name':name}
+
+                    #return super(AccountAdvancePayment, self).write(res)
+
+                    if self.partner_id.es_proveedor and self.type_advance:
+                        res = {'state': 'available', 'move_id': move_id.id, 'supplier':True, 'amount_available':self.amount_advance,'name':name, 'is_supplier':True}
+                    else:
+                        res = {'state': 'available', 'move_id': move_id.id, 'customer':True, 'amount_available':self.amount_advance,'name':name, 'is_customer':True}
+
+                    return super(AccountAdvancePayment, self).write(res)
         return True
 
     def get_move_apply(self):
@@ -327,36 +487,118 @@ class AccountAdvancePayment(models.Model):
         }
         move_apply_obj = self.env['account.move']
         move_apply_id = move_apply_obj.create(vals)
+        currency_rate = self.env['res.currency.rate'].search([
+            ('currency_id', '=', self.env.company.currency_id.id),
+            ('name', '=', self.date_apply),
+        ]).rate
+        if self.amount_currency_apply == self.env.company.currency_id:
+            if self.currency_id.name == 'USD':
+                self.move_advance_ = {
+                    'account_id': cuenta_acreedora,
+                    'company_id': self.partner_id.company_id.id,
+                    'currency_id': self.currency_id.id,
+                    'date_maturity': False,
+                    'ref': self.ref,
+                    'date': self.date_apply,
+                    'partner_id': self.partner_id.id,
+                    'move_id': move_apply_id.id,
+                    'name': self.name,
+                    'journal_id': self.journal_id.id,
+                    'credit': self.amount_apply,
+                    'debit': 0.0,
+                    'amount_currency': -(self.amount_apply / self.rate),
+                }
 
-        self.move_advance_ = {
-            'account_id': cuenta_acreedora,
-            'company_id': self.partner_id.company_id.id,
-            'currency_id': self.currency_id.id,
-            'date_maturity': False,
-            'ref': self.ref,
-            'date': self.date_apply,
-            'partner_id': self.partner_id.id,
-            'move_id': move_apply_id.id,
-            'name': self.name,
-            'journal_id': self.journal_id.id,
-            'credit': self.amount_apply,
-            'debit': 0.0,
-            'amount_currency': 0,
-        }
+                asiento_apply = self.move_advance_
+                move_line_obj = self.env['account.move.line']
+                move_line_id1 = move_line_obj.with_context(check_move_validity=False).create(asiento_apply)
 
-        asiento_apply = self.move_advance_
-        move_line_obj = self.env['account.move.line']
-        move_line_id1 = move_line_obj.with_context(check_move_validity=False).create(asiento_apply)
+                asiento_apply['amount_currency'] = self.amount_apply / self.rate
+                asiento_apply['account_id'] = cuenta_deudora
+                asiento_apply['credit'] = 0.0
+                asiento_apply['debit'] = self.amount_apply
+            else:
+                self.move_advance_ = {
+                    'account_id': cuenta_acreedora,
+                    'company_id': self.partner_id.company_id.id,
+                    'date_maturity': False,
+                    'ref': self.ref,
+                    'date': self.date_apply,
+                    'partner_id': self.partner_id.id,
+                    'move_id': move_apply_id.id,
+                    'name': self.name,
+                    'journal_id': self.journal_id.id,
+                    'credit': self.amount_apply,
+                    'debit': 0.0,
+                }
 
-        asiento_apply['account_id'] = cuenta_deudora
-        asiento_apply['credit'] = 0.0
-        asiento_apply['debit'] = self.amount_apply
+                asiento_apply = self.move_advance_
+                move_line_obj = self.env['account.move.line']
+                move_line_id1 = move_line_obj.with_context(check_move_validity=False).create(asiento_apply)
+
+                asiento_apply['account_id'] = cuenta_deudora
+                asiento_apply['credit'] = 0.0
+                asiento_apply['debit'] = self.amount_apply
+        else:
+            if self.currency_id.name == self.env.company.currency_id.name:
+                self.move_advance_ = {
+                    'account_id': cuenta_acreedora,
+                    'company_id': self.partner_id.company_id.id,
+                    'date_maturity': False,
+                    'ref': self.ref,
+                    'date': self.date_apply,
+                    'partner_id': self.partner_id.id,
+                    'move_id': move_apply_id.id,
+                    'name': self.name,
+                    'journal_id': self.journal_id.id,
+                    'credit': self.amount_apply * currency_rate,
+                    'debit': 0.0,
+                }
+
+                asiento_apply = self.move_advance_
+                move_line_obj = self.env['account.move.line']
+                move_line_id1 = move_line_obj.with_context(check_move_validity=False).create(asiento_apply)
+
+                asiento_apply['account_id'] = cuenta_deudora
+                asiento_apply['credit'] = 0.0
+                asiento_apply['debit'] = self.amount_apply * currency_rate
+            else:
+                self.move_advance_ = {
+                    'account_id': cuenta_acreedora,
+                    'company_id': self.partner_id.company_id.id,
+                    'currency_id': self.currency_id.id,
+                    'date_maturity': False,
+                    'ref': self.ref,
+                    'date': self.date_apply,
+                    'partner_id': self.partner_id.id,
+                    'move_id': move_apply_id.id,
+                    'name': self.name,
+                    'journal_id': self.journal_id.id,
+                    'credit': self.amount_apply * self.rate,
+                    'debit': 0.0,
+                    'amount_currency': -(self.amount_apply),
+                }
+
+                asiento_apply = self.move_advance_
+                move_line_obj = self.env['account.move.line']
+                move_line_id1 = move_line_obj.with_context(check_move_validity=False).create(asiento_apply)
+
+                asiento_apply['amount_currency'] = self.amount_apply
+                asiento_apply['account_id'] = cuenta_deudora
+                asiento_apply['credit'] = 0.0
+                asiento_apply['debit'] = self.amount_apply * self.rate
 
         move_line_id2 = move_line_obj.create(asiento_apply)
         move_apply_id.action_post()
         res = {'state': 'paid', 'move_apply_id': move_apply_id.id, 'amount_available': self.amount_available}
         self.write(res)
+        if self.currency_id.name == self.env.company.currency_id.name:
+            self.amount_available_conversion = self.amount_available / currency_rate
+        else:
+            self.amount_available_conversion = self.amount_available * self.rate
+
         return True
+
     def action_refund_amount_available(self):
         '''Crea un asiento contable con el monto residual disponible que queda de una aplicacion de anticipo'''
         if self.state == 'available':
@@ -372,29 +614,53 @@ class AccountAdvancePayment(models.Model):
             }
             move_obj = self.env['account.move']
             move_refund_id = move_obj.create(vals)
-            self.move_advance_ = {
-                'account_id': cuenta_acreedora,
-                'company_id': self.partner_id.company_id.id,
-                'currency_id': self.currency_id.id,
-                'date_maturity': False,
-                'ref': self.ref,
-                'date': self.date_apply,
-                'partner_id': self.partner_id.id,
-                'move_id': move_refund_id.id,
-                'name': self.name,
-                'journal_id': self.journal_id.id,
-                'credit': self.amount_available,
-                'debit': 0.0,
-                'amount_currency': 0,
-            }
+            if self.currency_id == self.env.company.currency_id:
+                self.move_advance_ = {
+                    'account_id': cuenta_acreedora,
+                    'company_id': self.partner_id.company_id.id,
+                    'date_maturity': False,
+                    'ref': self.ref,
+                    'date': self.date_apply,
+                    'partner_id': self.partner_id.id,
+                    'move_id': move_refund_id.id,
+                    'name': self.name,
+                    'journal_id': self.journal_id.id,
+                    'credit': self.amount_available,
+                    'debit': 0.0,
+                }
 
-            asiento = self.move_advance_
-            move_line_obj = self.env['account.move.line']
-            move_line_id1 = move_line_obj.with_context(check_move_validity=False).create(asiento)
+                asiento = self.move_advance_
+                move_line_obj = self.env['account.move.line']
+                move_line_id1 = move_line_obj.with_context(check_move_validity=False).create(asiento)
 
-            asiento['account_id'] = cuenta_deudora
-            asiento['credit'] = 0.0
-            asiento['debit'] = self.amount_available
+                asiento['account_id'] = cuenta_deudora
+                asiento['credit'] = 0.0
+                asiento['debit'] = self.amount_available
+            else:
+                self.move_advance_ = {
+                    'account_id': cuenta_acreedora,
+                    'company_id': self.partner_id.company_id.id,
+                    'currency_id': self.currency_id.id,
+                    'date_maturity': False,
+                    'ref': self.ref,
+                    'date': self.date_apply,
+                    'partner_id': self.partner_id.id,
+                    'move_id': move_refund_id.id,
+                    'name': self.name,
+                    'journal_id': self.journal_id.id,
+                    'credit': self.amount_available * self.rate,
+                    'debit': 0.0,
+                    'amount_currency': -(self.amount_available),
+                }
+
+                asiento = self.move_advance_
+                move_line_obj = self.env['account.move.line']
+                move_line_id1 = move_line_obj.with_context(check_move_validity=False).create(asiento)
+
+                asiento['amount_currency'] = self.amount_available
+                asiento['account_id'] = cuenta_deudora
+                asiento['credit'] = 0.0
+                asiento['debit'] = self.amount_available * self.rate
 
             move_line_id2 = move_line_obj.create(asiento)
             move_refund_id.action_post()
@@ -404,7 +670,7 @@ class AccountAdvancePayment(models.Model):
                        'move_refund_id': move_refund_id.id,
                        'amount_invoice':0,
                        'amount_apply':0,
-                       'invoice_id':''}
+                       'invoice_id':None}
                 self.write(res)
             return True
 
