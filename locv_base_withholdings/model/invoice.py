@@ -13,6 +13,7 @@ from odoo.tools import float_compare
 class AccountInvoice(models.Model):
     _inherit = 'account.move'
 
+
     def test_retenida(self, *args):
         """ Verify if this invoice is withhold
         """
