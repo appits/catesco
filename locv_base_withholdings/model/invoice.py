@@ -58,6 +58,8 @@ class AccountInvoice(models.Model):
                  'in_invoice': 1,
                  'out_refund': 1, 'in_refund': -1}
         direction = types[invoice.type]
+
+      #  credito = direction * pay_amount < 0 and - direction * pay_amount
         l1 = {
             'debit': direction * pay_amount > 0 and direction * pay_amount,
             'credit': direction * pay_amount < 0 and - direction * pay_amount,
@@ -67,7 +69,9 @@ class AccountInvoice(models.Model):
             'ref': invoice.name,
              'date': date,
             'currency_id': False,
-            'name': name
+            'name': name,
+            # 'amount_currency': credito/tasa,
+
              }
         lines = [(0, 0, l1)]
 
