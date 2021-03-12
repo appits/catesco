@@ -65,14 +65,14 @@ class AccountAdvancePayment(models.Model):
         fecha = invoice.date_advance
         if self.currency_id.name != self.env.company.currency_id.name:
             tasa_id = invoice.currency_id
-            tasa = self.env['multi.currency.rate'].search([('currency_id', '=', tasa_id.id), ('rate_date', '<=', fecha)], order='id desc', limit=1)
+            tasa = self.env['res.currency.rate'].search([('currency_id', '=', tasa_id.id), ('name', '<=', fecha)], order='id desc', limit=1)
             if not tasa:
                 raise exceptions.except_orm("Advertencia!",
                                             "No hay referencia de tasas registradas para moneda USD en la fecha igual o inferior de la Generacion del anticipo %s" %(invoice.name))
         elif self.currency_id.name == self.env.company.currency_id.name:
                 tasa_id = self.env['res.currency'].search([('name', '=', 'USD')])
-                tasa = self.env['multi.currency.rate'].search(
-                    [('currency_id', '=', tasa_id.id), ('rate_date', '<=', fecha)], order='id desc', limit=1)
+                tasa = self.env['res.currency.rate'].search(
+                    [('currency_id', '=', tasa_id.id), ('name', '<=', fecha)], order='id desc', limit=1)
                 if not tasa:
                     raise exceptions.except_orm("Advertencia!",
                                                 "No hay referencia de tasas registradas para moneda USD en la fecha igual o inferior de la Generacion del anticipo %s" % (
