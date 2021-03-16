@@ -81,16 +81,12 @@ class AccountAdvancePayment(models.Model):
 
     @api.onchange('date_apply')
     def onchange_date_apply(self):
-        currency_rate =  self.obtener_tasa(self)
-
-
-        if self.currency_id.name == self.env.company.currency_id.name:
-            if not currency_rate:
-                self.amount_available_conversion = 0
-            else:
-                self.amount_available_conversion = self.amount_available / currency_rate
+        if self.currency_id == self.env.company.currency_id:
+            self.amount_available_conversion = self.currency_id.with_context(date=self.date_apply).compute(
+                self.amount_available, self.conversion_currency)
         else:
-            self.amount_available_conversion = self.amount_available * self.rate
+            self.amount_available_conversion = self.currency_id.with_context(date=self.date_apply).compute(
+                self.amount_available, self.env.company.currency_id)
 
     def validate_amount_advance(self):
         if self.amount_advance <= 0:
@@ -107,17 +103,15 @@ class AccountAdvancePayment(models.Model):
     @api.depends('invoice_id')
     def _compute_amount_invoice(self):
         '''Actualiza el campo de monto de la faltura con el saldo de la factura'''
-        self.invoice_currency = self.invoice_id.currency_id
-        self.amount_invoice = self.invoice_id.amount_residual
-        if self.invoice_id:
-            if not self.date_apply:
-                raise exceptions.Warning(_('Establezca la fecha de aplicación'))
-            if self.currency_id.name == self.env.company.currency_id.name:
-                self.conversion_currency = self.env['res.currency'].search([
-                    ('name', '=', 'USD')
-                ])
+        for advance in self:
+            if advance.invoice_id:
+                if not advance.date_apply:
+                    raise exceptions.Warning(_('Establezca la fecha de aplicación'))
+                advance.invoice_currency = advance.invoice_id.currency_id
+                advance.amount_invoice = advance.invoice_id.amount_residual
             else:
-                self.conversion_currency = self.env.company.currency_id
+                advance.invoice_currency = False
+                advance.amount_invoice = 0
 
     def unlink(self):
         '''convierte a borrador la vista para ser editada'''
@@ -226,67 +220,6 @@ class AccountAdvancePayment(models.Model):
             if self.amount_available > 0:
                 self.copy()
                 self.state = 'paid'
-                
-
-
-    def write(self, vals):
-        '''sobreescritura del boton editar '''
-        if vals.get('amount_apply') or vals.get('amount_invoice'):
-            if self.state == 'available':
-                local_invoice_id = vals.get('invoice_id', False) or self.invoice_id
-                #isisntance es una funcion que pregunta si es una instancia y la convierte a intero
-                if isinstance(local_invoice_id, int):
-                    local_invoice_id = self.env['account.move'].browse(local_invoice_id)
-                if not vals.get('amount_apply', False):
-                    vals.update({'amount_apply':self.amount_apply})
-                if not vals.get('amount_available', False):
-                    vals.update({'amount_available':self.amount_available})
-                if not vals.get('amount_invoice', False):
-                    vals.update({'amount_invoice':local_invoice_id.amount_residual})
-                if not vals.get('amount_currency_apply', False):
-                    vals.update({'amount_currency_apply':self.amount_currency_apply.id})
-                if not vals.get('amount_available_conversion', False):
-                    vals.update({'amount_available_conversion':self.amount_available_conversion})
-                if not vals.get('date_apply', False):
-                    vals.update({'date_apply':self.date_apply})
-                if self.validate_amount(vals):
-                    amount_apply = vals.get('amount_apply')
-                    amount_currency_apply = vals.get('amount_currency_apply')
-                    if amount_currency_apply == self.currency_id.id:
-                        self.amount_available = self.amount_available - amount_apply
-                        vals.update({'amount_available': self.amount_available})
-                    else:
-                        date_apply = vals.get('date_apply') if vals.get('date_apply', False) else self.date_apply
-                        currency_rate = self.obtener_tasa(self)
-                        if amount_currency_apply == self.env.company.currency_id.id:
-                            conversion = amount_apply / self.rate
-                            self.amount_available = self.amount_available - conversion
-                            vals.update({'amount_available': self.amount_available})
-                        else:
-                            conversion = amount_apply * currency_rate
-                            self.amount_available = self.amount_available - conversion
-                            vals.update({'amount_available': self.amount_available})
-
-                else:
-                    self.state = 'paid'
-
-        if vals.get('amount_advance'):
-            if self.state == 'draft':
-                if vals.get('amount_currency_apply') == self.currency_id.id:
-                    self.amount_available = self.amount_advance - self.amount_apply
-                else:
-                    currency_rate = self.obtener_tasa(self)
-                    if vals.get('amount_currency_apply') == self.env.company.currency_id.id:
-                        conversion = self.amount_apply / currency_rate
-                        self.amount_available = self.amount_advance - conversion
-                    else:
-                        conversion = self.amount_apply * currency_rate
-                        self.amount_available = self.amount_advance - conversion
-                vals.update({'amount_available': self.amount_available,
-                             'is_supplier':self.partner_id.es_proveedor,
-                             'is_customer':self.partner_id.es_cliente})
-
-        return super(AccountAdvancePayment, self).write(vals)
 
     @api.model
     def create(self, vals):
@@ -389,15 +322,18 @@ class AccountAdvancePayment(models.Model):
             move_obj = self.env['account.move']
             move_id = move_obj.create(vals)
             #Si el pago es en moneda extranjera $
-            if self.currency_id.name != self.env.company.currency_id.name:
-                self.rate = currency_rate = self.obtener_tasa(self)
+            if self.currency_id != self.env.company.currency_id:
+                # tasa del cambio a la fecha del registro del anticipo.
+                self.rate = self.currency_id.with_context(date=self.date_advance).compute(1, self.env.company.currency_id)
                 self.amount_currency_apply = self.env['res.currency'].search([
                 ('name', '=', 'USD')
                 ])
-                if not currency_rate:
-                    raise exceptions.Warning(_('Asegurese de tener la multimoneda configurada y registrar la tasa de la fecha del anticipo'))
+                self.conversion_currency = self.env.company.currency_id
+                
                 money = self.amount_advance
-                self.move_advance_ = {
+                money_converted = self.currency_id.with_context(date=self.date_advance).compute(money, 
+                    self.env.company.currency_id)
+                asiento = {
                     'account_id': cuenta_acreedora,
                     'company_id': self.partner_id.company_id.id,
                     'currency_id': self.currency_id.id,
@@ -408,18 +344,18 @@ class AccountAdvancePayment(models.Model):
                     'move_id': move_id.id,
                     'name': name,
                     'journal_id': self.journal_id.id,
-                    'credit':  self.amount_advance*currency_rate,
+                    'credit':  money_converted,
                     'debit': 0.0,
                     'amount_currency': -money,
                 }
-                asiento = self.move_advance_
+                #asiento = self.move_advance_
                 move_line_obj = self.env['account.move.line']
                 move_line_id1 = move_line_obj.with_context(check_move_validity=False).create(asiento)
                 asiento['amount_currency'] = money
                 # asiento['currency_id'] = ""
                 asiento['account_id'] = cuenta_deudora
                 asiento['credit'] = 0.0
-                asiento['debit'] = self.amount_advance*currency_rate
+                asiento['debit'] = money_converted
                 move_line_id2 = move_line_obj.create(asiento)
                 move_id.action_post()
 
@@ -441,7 +377,8 @@ class AccountAdvancePayment(models.Model):
                     return super(AccountAdvancePayment, self).write(res)
             else:
                 self.amount_currency_apply = self.env.company.currency_id
-                self.move_advance_ = {
+                self.conversion_currency = self.env['res.currency'].search([('name', '=', 'USD')])
+                asiento = {
                     'account_id': cuenta_acreedora,
                     'company_id': self.partner_id.company_id.id,
                     'date_maturity': False,
@@ -454,7 +391,7 @@ class AccountAdvancePayment(models.Model):
                     'credit': self.amount_advance,
                     'debit': 0.0,
                 }
-                asiento = self.move_advance_
+                #asiento = self.move_advance_
                 move_line_obj = self.env['account.move.line']
                 move_line_id1 = move_line_obj.with_context(check_move_validity=False).create(asiento)
 
@@ -494,9 +431,11 @@ class AccountAdvancePayment(models.Model):
         }
         move_apply_obj = self.env['account.move']
         move_apply_id = move_apply_obj.create(vals)
-        currency_rate = self.obtener_tasa(self)
         if self.amount_currency_apply == self.env.company.currency_id:
             if self.currency_id.name == 'USD':
+                amount_currency = self.amount_currency_apply.with_context(date=self.date_apply).compute(
+                    self.amount_apply, self.currency_id
+                )
                 self.move_advance_ = {
                     'account_id': cuenta_acreedora,
                     'company_id': self.partner_id.company_id.id,
@@ -510,17 +449,19 @@ class AccountAdvancePayment(models.Model):
                     'journal_id': self.journal_id.id,
                     'credit': self.amount_apply,
                     'debit': 0.0,
-                    'amount_currency': -(self.amount_apply / self.rate),
+                    'amount_currency': -(amount_currency),
                 }
 
                 asiento_apply = self.move_advance_
                 move_line_obj = self.env['account.move.line']
                 move_line_id1 = move_line_obj.with_context(check_move_validity=False).create(asiento_apply)
 
-                asiento_apply['amount_currency'] = self.amount_apply / self.rate
+                asiento_apply['amount_currency'] = amount_currency
                 asiento_apply['account_id'] = cuenta_deudora
                 asiento_apply['credit'] = 0.0
                 asiento_apply['debit'] = self.amount_apply
+
+                self.amount_available -= amount_currency
             else:
                 self.move_advance_ = {
                     'account_id': cuenta_acreedora,
@@ -543,8 +484,13 @@ class AccountAdvancePayment(models.Model):
                 asiento_apply['account_id'] = cuenta_deudora
                 asiento_apply['credit'] = 0.0
                 asiento_apply['debit'] = self.amount_apply
+
+                self.amount_available -= self.amount_apply
         else:
-            if self.currency_id.name == self.env.company.currency_id.name:
+            if self.currency_id == self.env.company.currency_id:
+                amount_converted = self.amount_currency_apply.with_context(date=self.date_apply).compute(
+                    self.amount_apply, self.currency_id
+                )
                 self.move_advance_ = {
                     'account_id': cuenta_acreedora,
                     'company_id': self.partner_id.company_id.id,
@@ -555,7 +501,7 @@ class AccountAdvancePayment(models.Model):
                     'move_id': move_apply_id.id,
                     'name': self.name,
                     'journal_id': self.journal_id.id,
-                    'credit': self.amount_apply * currency_rate,
+                    'credit': amount_converted,
                     'debit': 0.0,
                 }
 
@@ -565,8 +511,13 @@ class AccountAdvancePayment(models.Model):
 
                 asiento_apply['account_id'] = cuenta_deudora
                 asiento_apply['credit'] = 0.0
-                asiento_apply['debit'] = self.amount_apply * currency_rate
+                asiento_apply['debit'] = amount_converted
+
+                self.amount_available -= amount_converted
             else:
+                amount_converted = self.amount_currency_apply.with_context(date=self.date_apply).compute(
+                    self.amount_apply, self.env.company.currency_id
+                )
                 self.move_advance_ = {
                     'account_id': cuenta_acreedora,
                     'company_id': self.partner_id.company_id.id,
@@ -578,7 +529,7 @@ class AccountAdvancePayment(models.Model):
                     'move_id': move_apply_id.id,
                     'name': self.name,
                     'journal_id': self.journal_id.id,
-                    'credit': self.amount_apply * self.rate,
+                    'credit': amount_converted,
                     'debit': 0.0,
                     'amount_currency': -(self.amount_apply),
                 }
@@ -590,16 +541,24 @@ class AccountAdvancePayment(models.Model):
                 asiento_apply['amount_currency'] = self.amount_apply
                 asiento_apply['account_id'] = cuenta_deudora
                 asiento_apply['credit'] = 0.0
-                asiento_apply['debit'] = self.amount_apply * self.rate
+                asiento_apply['debit'] = amount_converted
+
+                self.amount_available -= self.amount_apply
 
         move_line_id2 = move_line_obj.create(asiento_apply)
         move_apply_id.action_post()
         res = {'state': 'paid', 'move_apply_id': move_apply_id.id, 'amount_available': self.amount_available}
         self.write(res)
-        if self.currency_id.name == self.env.company.currency_id.name:
-            self.amount_available_conversion = self.amount_available / currency_rate
+        if self.currency_id == self.env.company.currency_id:
+            available_conversion = self.currency_id.with_context(date=self.date_apply).compute(
+                self.amount_available, self.conversion_currency
+            )
+            self.amount_available_conversion = available_conversion
         else:
-            self.amount_available_conversion = self.amount_available * self.rate
+            available_conversion = self.currency_id.with_context(date=self.date_apply).compute(
+                self.amount_available, self.conversion_currency
+            )
+            self.amount_available_conversion = available_conversion
 
         return True
 
@@ -641,6 +600,9 @@ class AccountAdvancePayment(models.Model):
                 asiento['credit'] = 0.0
                 asiento['debit'] = self.amount_available
             else:
+                amount_converted = self.currency_id.with_context(date=self.date_advance).compute(
+                    self.amount_available, self.env.company.currency_id 
+                )
                 self.move_advance_ = {
                     'account_id': cuenta_acreedora,
                     'company_id': self.partner_id.company_id.id,
@@ -652,7 +614,7 @@ class AccountAdvancePayment(models.Model):
                     'move_id': move_refund_id.id,
                     'name': self.name,
                     'journal_id': self.journal_id.id,
-                    'credit': self.amount_available * self.rate,
+                    'credit': amount_converted,
                     'debit': 0.0,
                     'amount_currency': -(self.amount_available),
                 }
@@ -664,7 +626,7 @@ class AccountAdvancePayment(models.Model):
                 asiento['amount_currency'] = self.amount_available
                 asiento['account_id'] = cuenta_deudora
                 asiento['credit'] = 0.0
-                asiento['debit'] = self.amount_available * self.rate
+                asiento['debit'] = amount_converted
 
             move_line_id2 = move_line_obj.create(asiento)
             move_refund_id.action_post()
