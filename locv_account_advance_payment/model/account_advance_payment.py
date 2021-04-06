@@ -433,7 +433,11 @@ class AccountAdvancePayment(models.Model):
         move_apply_id = move_apply_obj.create(vals)
         if self.amount_currency_apply == self.env.company.currency_id:
             if self.currency_id.name == 'USD':
-                amount_currency = self.amount_currency_apply.with_context(date=self.date_apply).compute(
+                if self.invoice_id.currency_id == self.env.company.currency_id:
+                    date_apply = self.invoice_id.invoice_date
+                else:
+                    date_apply = self.date_apply
+                amount_currency = self.amount_currency_apply.with_context(date=date_apply).compute(
                     self.amount_apply, self.currency_id
                 )
                 self.move_advance_ = {
@@ -488,7 +492,11 @@ class AccountAdvancePayment(models.Model):
                 self.amount_available -= self.amount_apply
         else:
             if self.currency_id == self.env.company.currency_id:
-                amount_converted = self.amount_currency_apply.with_context(date=self.date_apply).compute(
+                if self.invoice_id.currency_id == self.env.company.currency_id:
+                    date_apply = self.invoice_id.invoice_date
+                else:
+                    date_apply = self.date_apply
+                amount_converted = self.amount_currency_apply.with_context(date=date_apply).compute(
                     self.amount_apply, self.currency_id
                 )
                 self.move_advance_ = {
@@ -515,7 +523,11 @@ class AccountAdvancePayment(models.Model):
 
                 self.amount_available -= amount_converted
             else:
-                amount_converted = self.amount_currency_apply.with_context(date=self.date_apply).compute(
+                if self.invoice_id.currency_id == self.env.company.currency_id:
+                    date_apply = self.invoice_id.invoice_date
+                else:
+                    date_apply = self.date_apply
+                amount_converted = self.amount_currency_apply.with_context(date=date_apply).compute(
                     self.amount_apply, self.env.company.currency_id
                 )
                 self.move_advance_ = {
