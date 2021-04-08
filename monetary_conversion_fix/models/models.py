@@ -5,4 +5,4 @@ from odoo import models, fields, api, tools
 class ResCurrency(models.Model):
     _inherit = 'res.currency'
 
-    rounding = fields.Float(digits=(12,8))
+    rounding = fields.Float(digits=(12,10))

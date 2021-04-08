@@ -13,7 +13,7 @@
      <field name="inherit_id" ref="base.view_currency_form" />
      <field name="arch" type="xml">
        <field name="rounding" position="attributes">
-         <attribute name="digits" >[12, 8]</attribute>
+         <attribute name="digits" >[12, 10]</attribute>
        </field>
      </field>
    </record> 
