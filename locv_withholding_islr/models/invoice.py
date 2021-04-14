@@ -120,15 +120,17 @@ class AccountMove(models.Model):
         #if var:
         #    self._compute_retenida()
         if self.company_id.partner_id.islr_withholding_agent and self.partner_id.islr_withholding_agent:
-            for concep in self.invoice_line_ids:
-                if concep.concept_id.withholdable == True:
-                    if self.state == 'posted':
-                        for ilids in self.invoice_line_ids:
-                            self.check_invoice_type()
-                            self.check_withholdable_concept()
-                            islr_wh_doc_id = self._create_islr_wh_doc()
-                            islr_wh_doc_id and self.write({'islr_wh_doc_id': islr_wh_doc_id.id})
+            search_withholdable=self.invoice_line_ids.filtered(lambda r: (r.concept_id.withholdable == True) )
+            if self.state == 'posted' and search_withholdable:
+                self.check_invoice_type()
+                self.check_withholdable_concept()
+                islr_wh_doc_id = self._create_islr_wh_doc()
+                islr_wh_doc_id and self.write({'islr_wh_doc_id': islr_wh_doc_id.id})
+ 
+        
         return var
+
+
 
     # BEGIN OF REWRITING ISLR
     def check_invoice_type(self):
