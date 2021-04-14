@@ -30,11 +30,11 @@ class AccountWhIvaLineTax(models.Model):
         related='inv_tax_id.name', store=True, readonly=True,
         ondelete='set null', help=" Tax Name")
     base = fields.Float(
-        string='Base del Impuesto', digit=dp.get_precision('Withhold'),
+        string='Base del Impuesto',
         store=True, compute='_get_base_amount',
         help="Tax Base")
     amount = fields.Float(
-        string='Cantidad gravada', digits=dp.get_precision('Withhold'),
+        string='Cantidad gravada',
         store=True, compute='_get_base_amount',
         help="Withholding tax amount")
     company_id = fields.Many2one(
