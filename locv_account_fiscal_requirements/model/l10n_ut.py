@@ -74,7 +74,7 @@ class L10nUt(models.Model):
         if from_currency_id == to_currency_id:
             return from_amount
 
-        rc_obj = self.env['res.currency']
+        rc_obj = self.env['res.currency'].with_context(date=exchange_date)
         # euranga07122016 modificacion
         #context = {'date': exchange_date}
         fci = rc_obj.browse(from_currency_id)
