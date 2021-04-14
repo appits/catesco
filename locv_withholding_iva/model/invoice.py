@@ -210,7 +210,7 @@ class AccountMove(models.Model):
                 # 'date': inv_brw.invoice_date,
 
             if inv_brw.company_id.propagate_invoice_date_to_vat_withholding:
-                ret_iva['date'] = inv_brw.invoice_date
+                ret_iva['date'] = inv_brw.date
                 ret_iva['date_ret'] = ret_iva['date']
                 ret_iva['period_id'] = ret_iva['date']
         return values and wh_iva_obj.create(values)
@@ -259,9 +259,9 @@ class AccountMove(models.Model):
                                       'type': wh_type,
                                       'account_id': acc_id,
                                       'partner_id': acc_part_id.id,
-                                      'date_ret': inv_brw.invoice_date,
-                                      'period_id': inv_brw.invoice_date,
-                                      'date': inv_brw.invoice_date,
+                                      'date_ret': inv_brw.date,
+                                      'period_id': inv_brw.date,
+                                      'date': inv_brw.date,
                                       }
                         else:
                             acc_id = acc_part_id.property_account_payable_id.id
@@ -275,9 +275,9 @@ class AccountMove(models.Model):
                                       'type': wh_type,
                                       'account_id': acc_id,
                                       'partner_id': acc_part_id.id,
-                                      'date_ret': inv_brw.invoice_date,
-                                      'period_id': inv_brw.invoice_date,
-                                      'date': inv_brw.invoice_date,
+                                      'date_ret': inv_brw.date,
+                                      'period_id': inv_brw.date,
+                                      'date': inv_brw.date,
                                      }
                         if inv_brw.company_id.propagate_invoice_date_to_vat_withholding:
                             ret_iva['date'] = inv_brw.invoice_date
