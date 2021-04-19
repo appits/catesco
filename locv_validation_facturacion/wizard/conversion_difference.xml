@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="conversion_difference_view_form" model="ir.ui.view">
+        <field name="name">Conversion Difference</field>
+        <field name="model">conversion.difference</field>
+        <field name="arch" type="xml">
+            <form string="">
+                <sheet>
+                    <group>
+                        <field name="invoice_id" />
+                        <field name="date" />
+                        <field name="ref" />
+                        <field name="account_id" />
+                        <field name="journal_id" />
+                    </group>
+                </sheet>
+                <footer>
+                    <group>
+                        <button name="post" string="Publicar" type="object" />
+                    </group>
+                </footer>
+            </form>
+        </field>
+    </record>
+
+</odoo>

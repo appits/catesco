@@ -111,3 +111,13 @@ class AccountMoveInherit(models.Model):
                                                         partner_obj.name))
         res = super(AccountMoveInherit, self).write(vals)
         return res
+    
+    def action_conversion_difference(self):
+        self.ensure_one()
+        return {
+            'type': 'ir.actions.act_window',
+            'name': 'Ajuste En Conversion De Divisas',
+            'view_mode': 'form',
+            'res_model': 'conversion.difference',
+            'target': 'new',
+        }
