@@ -59,8 +59,8 @@ class AccountWhIvaLineTax(models.Model):
                 record.move_id.company_id.currency_id.id,
                 record.wh_vat_line_id.retention_id.date)
 
-            record.base = f_xc(record.base)
-            record.amount = f_xc((record.amount))
+            record.base = record.base
+            record.amount = record.amount
             if record.id_tax:
                 busq = self.env['account.tax'].search([('id', '=', record.id_tax)])
                 record.name = busq.name
@@ -191,11 +191,19 @@ class AccountWhIvaLine(models.Model):
                 # Clean tax lines of the withholding voucher
                 #awilt.search([('wh_vat_line_id', '=', rec.id)]).unlink()
                 # Filter withholdable taxes
-
+                
+                invoice_currency = rec.invoice_id.currency_id
+                company_currency = self.env.company.currency_id
                 for line_ids in rec.invoice_id.invoice_line_ids:
                     # Load again tax lines of the withholding voucher
-                    monto_total = float(line_ids.price_total)
-                    monto_subtotal = float(line_ids.price_subtotal)
+                    monto_total = invoice_currency.with_context(date=rec.invoice_id.date).compute(
+                        line_ids.price_total,
+                        company_currency
+                    )
+                    monto_subtotal = invoice_currency.with_context(date=rec.invoice_id.date).compute(
+                        line_ids.price_subtotal,
+                        company_currency
+                    )
                     if len(line_ids.tax_ids) > 1:
                         taxxx = line_ids.tax_ids[0]
                     else:
@@ -207,7 +215,7 @@ class AccountWhIvaLine(models.Model):
                                #   'tax_id': tax.tax_id.id,
                                   'move_id': rec.invoice_id.id,
                                   'base': monto_subtotal,
-                                  'amount': monto_total - monto_subtotal
+                                  'amount': monto_subtotal * 16 / 100.0
                                   })
 
         return True
