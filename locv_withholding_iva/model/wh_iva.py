@@ -342,12 +342,14 @@ class AccountWhIva(models.Model):
     def action_cancel(self):
         """ Call cancel_move and return True
         """
+        invoice = self.mapped('wh_lines.invoice_id')
         self.get_reconciled_move()
         self.cancel_move()
         self.clear_wh_lines()
         self.amount_base_ret = 0
         self.total_tax_ret = 0
         self.write({'state': 'cancel'})
+        invoice.write({'wh_iva': False})
         return True
 
 
