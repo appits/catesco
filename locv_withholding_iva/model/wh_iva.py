@@ -30,11 +30,11 @@ class AccountWhIvaLineTax(models.Model):
         related='inv_tax_id.name', store=True, readonly=True,
         ondelete='set null', help=" Tax Name")
     base = fields.Float(
-        string='Base del Impuesto',
+        string='Base del Impuesto', digits='Withholding',
         store=True, compute='_get_base_amount',
         help="Tax Base")
     amount = fields.Float(
-        string='Cantidad gravada',
+        string='Cantidad gravada', digits='Withholding',
         store=True, compute='_get_base_amount',
         help="Withholding tax amount")
     company_id = fields.Many2one(
@@ -42,7 +42,7 @@ class AccountWhIvaLineTax(models.Model):
         related='inv_tax_id.company_id', store=True, readonly=True,
         ondelete='set null', help="Company")
     amount_ret = fields.Float(
-        string='Cantidad gravada retenida',
+        string='Cantidad gravada retenida', digits='Withholding',
         store=True, compute='_get_amount_ret', inverse='_set_amount_ret',
         help="Importe de retención de IVA")
     alicuota = fields.Float('% Alicuota del impuesto')
