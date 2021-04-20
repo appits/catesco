@@ -22,7 +22,6 @@
     "data": [
         'security/ir.model.access.csv',
         'view/invoice_view.xml',
-        'wizard/conversion_difference.xml',
     ],
     'test': [
 
