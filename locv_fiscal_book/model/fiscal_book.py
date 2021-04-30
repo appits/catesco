@@ -1202,16 +1202,17 @@ class FiscalBook(models.Model):
                 people_type = 'N/A'
                 document_v = 'N/A'
                 if rp_brw:
-                    if rp_brw.company_type == 'company':
+                    if rp_brw.company_type == 'company': #OJO RIF----------------------------------------------------------
+
                         people_type = rp_brw.people_type_company
                         if people_type == 'pjdo':
                             document_v = rp_brw.vat
                     elif rp_brw.company_type == 'person':
                         people_type = rp_brw.people_type_individual
                         if rp_brw.nationality == 'V' or rp_brw.nationality == 'E':
-                            document_v = str(rp_brw.nationality) + str(rp_brw.identification_id)
+                            document_v = rp_brw.vat
                         else:
-                            document_v = rp_brw.identification_id
+                            document_v = rp_brw.vat
 
         #        iwdl_brw = iwdl_id if iwdl_id and iwdl_id not in no_match_dt_iwdl_ids else False
                 local_inv_nbr = inv_otro.fiscal_printer and inv_otro.invoice_printer or (
@@ -2255,6 +2256,7 @@ class FiscalBookLines(models.Model):
     _description = "Venta y compra de líneas de libros fiscales en Venezuela"
     _name = 'fiscal.book.line'
     _rec_name = 'rank'
+    _order='emission_date'
     #_order = 'parent_id, rank'
  #   _parent_store = "True"
     base = fields.Float('base')
