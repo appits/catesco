@@ -26,6 +26,7 @@
             paperformat="paperformat_sale_fiscal_book_report_record"
             name = "locv_fiscal_book.report_fiscal_sale_book"
             file = "locv_fiscal_book.report_fiscal_sale_book"
+            menu="False"
         />
         <template id="report_fiscal_sale_book" >
           <t t-call="web.html_container">
@@ -48,25 +49,32 @@
 	            <table>
                     <thead style="font-size:10px;">
                         <tr class="text-center">
-                            <th colspan="15"></th>
-							<th colspan="9" class="text-center table-bordered" style="background-color:#A4A4A4;color:#000000; border: 1px solid #000000;"><p>Ventas Internas ó Exportación Gravadas</p></th>
+                            <th colspan="14"></th>
+							<th colspan="3" class="text-center table-bordered" style="background-color:#A4A4A4;color:#000000; border: 1px solid #000000;"><p>CONTRIBUYENTE</p></th>
                             <th></th>
                         </tr>
                         <tr class="text-center table-bordered" style="background-color:#A4A4A4; height:60px; border: 1px solid #000000;">
         	                <th class="text-center table-bordered" style="width:20px; vertical-align: middle; border: 1px solid #000000;">Nro. Op.</th>
+<!--
                              <th class="text-center table-bordered" style="width:20px; vertical-align: middle; border: 1px solid #000000;">Nro. Reporte Z</th>
+-->
         	                <th class="text-center table-bordered" style="width:200px; vertical-align: middle; border: 1px solid #000000;">Fecha Documento</th>
         	                <th class="text-center table-bordered" style="width:200px; vertical-align: middle; border: 1px solid #000000;">RIF</th>
         	                <th class="text-center table-bordered" style="width:300px; vertical-align: middle; border: 1px solid #000000;">Nombre ó Razón Social</th>
+<!--
                             <th class="text-center table-bordered" style="width:150px; vertical-align: middle; border: 1px solid #000000;">Tipo Prov.</th>
+-->
         	                <th class="text-center table-bordered" style="width:200px; vertical-align: middle; border: 1px solid #000000;">Nro. Planilla de Exportación</th>
         	                <th class="text-center table-bordered" style="width:100px; vertical-align: middle; border: 1px solid #000000;">Nro. De Factura</th>
         	                <th class="text-center table-bordered" style="width:300px; vertical-align: middle; border: 1px solid #000000;">Nro. De Control</th>
+<!--
                             <th class="text-center table-bordered" style="width:300px; vertical-align: middle; border: 1px solid #000000;">Nro. Ultima Factura</th>
-        	                <th class="text-center table-bordered" style="width:100px; vertical-align: middle; border: 1px solid #000000;">Nro. Factura Afectada</th>
+-->
+
         	                <th class="text-center table-bordered" style="width:200px; vertical-align: middle; border: 1px solid #000000;">Nro. Nota de Débito</th>
         	                <th class="text-center table-bordered" style="width:200px; vertical-align: middle; border: 1px solid #000000;">Nro. Nota de Crédito</th>
         	                <th class="text-center table-bordered" style="width:200px; vertical-align: middle; border: 1px solid #000000;">Tipo de Trans.</th>
+        	                <th class="text-center table-bordered" style="width:100px; vertical-align: middle; border: 1px solid #000000;">Nro. Factura Afectada</th>
         	                <th class="text-center table-bordered" style="width:350px; vertical-align: middle; border: 1px solid #000000;">Ventas Incluyendo IVA</th>
         	                <th class="text-center table-bordered" style="width:100px; vertical-align: middle; border: 1px solid #000000;">Ventas Internas ó Exportaciones No Gravadas </th>
         	                <th class="text-center table-bordered" style="width:100px; vertical-align: middle; border: 1px solid #000000;">Ventas Internas ó Exportaciones Exoneradas</th>
@@ -81,7 +89,9 @@
         	                <th class="text-center table-bordered" style="width:350px; vertical-align: middle; border: 1px solid #000000;">Impuesto IVA Alicuota Adicional</th>
         	                <th class="text-center table-bordered" style="width:350px; vertical-align: middle; border: 1px solid #000000;">IVA Retenido (Comprador)</th>
         	                <th class="text-center table-bordered" style="width:200px; vertical-align: middle; border: 1px solid #000000;">Nro. De Comprobante</th>
+<!--
                             <th class="text-center table-bordered" style="width:400px; vertical-align: middle; border: 1px solid #000000; font-size:8px;">Fecha Comp.</th>
+-->
                         </tr>
 		            </thead>
 		            <tbody style="font-size:10px;">
@@ -90,20 +100,27 @@
                         <t t-foreach="docs" t-as="doc">
         	            <tr style=" border: 1px solid #000000; height: 20px;" class="text-center table-bordered">
         	                    <td style=" border: 1px solid #000000;" class="text-center table-bordered"><span t-esc="contador"/></td>
+<!--
                                 <td style=" border: 1px solid #000000;" class="text-center table-bordered"><span t-esc="doc['report_z']"/></td>
+-->
         	                    <td style=" border: 1px solid #000000;" class="text-center table-bordered"><span t-esc="doc['emission_date']"/></td>
         	                    <td style=" border: 1px solid #000000;" class="text-center table-bordered"><span t-esc="doc['partner_vat']"/></td>
         	                    <td style=" border: 1px solid #000000;" class="text-center table-bordered"><span t-esc="doc['partner_name']"/></td>
+<!--
                                 <td style=" border: 1px solid #000000;" class="text-center table-bordered"><span t-esc="doc['people_type']"/></td>
+-->
         	                    <td style=" border: 1px solid #000000;" class="text-center table-bordered"><span t-esc="doc['export_form']"/></td>
         	                    <td t-if="not doc['credit_note']" style=" border: 1px solid #000000;" class="text-center table-bordered"><span t-esc="doc['invoice_number']"/></td>
                                 <td t-if="doc['credit_note']" style=" border: 1px solid #000000;" class="text-center table-bordered"></td>
                                 <td style=" border: 1px solid #000000;" class="text-center table-bordered"><span t-esc="doc['ctrl_number']"/></td>
+<!--
                                 <td style=" border: 1px solid #000000;" class="text-center table-bordered"><span t-esc="doc['n_ultima_factZ']"/></td>
-        	                    <td style=" border: 1px solid #000000;" class="text-center table-bordered"><span t-esc="doc['affected_invoice']"/></td>
+-->
+ 
         	                    <td style=" border: 1px solid #000000;" class="text-center table-bordered"><span t-esc="doc['debit_note']"/></td>
         	                    <td style=" border: 1px solid #000000;" class="text-center table-bordered"><span t-esc="doc['credit_note']"/></td>
         	                    <td style=" border: 1px solid #000000;" class="text-center table-bordered"><span t-esc="doc['type']"/></td>
+        	                           	                    <td style=" border: 1px solid #000000;" class="text-center table-bordered"><span t-esc="doc['affected_invoice']"/></td>
         	                    <td style=" border: 1px solid #000000;" class="text-center table-bordered"><span t-esc="'{0:,.2f}'.format(doc['total_w_iva']).replace(',', 'X').replace('.', ',').replace('X', '.')"/></td>
         	                    <td style=" border: 1px solid #000000;" class="text-center table-bordered"><span t-esc="'{0:,.2f}'.format(doc['no_taxe_sale']).replace(',', 'X').replace('.', ',').replace('X', '.')"/></td>
         	                    <td style=" border: 1px solid #000000;" class="text-center table-bordered"><span t-esc="doc['export_sale']"/></td>
@@ -119,7 +136,9 @@
 
                                 <td style=" border: 1px solid #000000;" class="text-center table-bordered"><span t-esc="'{0:,.2f}'.format(doc['get_wh_vat']).replace(',', 'X').replace('.', ',').replace('X', '.')"/></td>
         	                    <td style=" border: 1px solid #000000;" class="text-center table-bordered"><span t-esc="doc['wh_number']"/></td>
+<!--
                                 <td style=" border: 1px solid #000000;" class="text-center table-bordered; font-size:8px;"><span t-esc="doc['date_wh_number']"/></td>
+-->
       			        </tr>
                             <t t-set="contador" t-value="contador+1"/>
                         </t>
@@ -127,7 +146,7 @@
                           <td rowspan="1"><p> &amp;nbsp;</p></td>
                       </tr>
                       <tr>
-                          <td colspan="13"></td>
+                          <td colspan="10"></td>
                           <td class="text-center table-bordered" style="background-color:#A4A4A4;color:#000000; border: 1px solid #000000;">
                               <p>TOTALES:</p>
                           </td>

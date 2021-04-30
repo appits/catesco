@@ -54,16 +54,22 @@
                          <table >
                              <thead style="font-size:10px;">
                             <tr class="text-center">
-                              <th colspan="12"></th>
-                              <th colspan="10" class="text-center table-bordered" style="background-color:#A4A4A4;color:#000000; border: 1px solid #000000;"><p>Compras Internas</p></th>
+                              <th colspan="15"></th>
+                              <th colspan="7" class="text-center table-bordered" style="background-color:#A4A4A4;color:#000000; border: 1px solid #000000;"><p>Compras gravadas (Crédito Fiscal)</p></th>
+<!--
                               <th colspan="5" style="background-color:#A4A4A4;color:#000000; border: 1px solid #000000;" class="text-center table-bordered"><p>Compras de Importaciones</p></th>
+-->
+<!--
                               <th colspan="2" style="background-color:#A4A4A4;color:#000000; border: 1px solid #000000;" class="text-center table-bordered"><p>Retenciones IVA Proveedores</p></th>
+-->
                             </tr>
                             <tr class="text-center table-bordered" style="background-color:#A4A4A4; height:60px; border: 1px solid #000000; font-size:6px;" >
                                 <th class="text-center table-bordered" style="width:20px; vertical-align: middle; border: 1px solid #000000;">Nro. Op</th>
                                 <th class="text-center table-bordered" style="width:200px; vertical-align: middle; border: 1px solid #000000;">Fecha Emisión Doc.</th>
                                 <th class="text-center table-bordered" style="width:450px; vertical-align: middle; border: 1px solid #000000;">Nro. de RIF</th>
                                 <th class="text-center table-bordered" style="width:500px; vertical-align: middle; border: 1px solid #000000;">Nombre ó Razón Social</th>
+                                <th class="text-center table-bordered" style="width:200px; vertical-align: middle; border: 1px solid #000000;">Nro. Planilla Importación</th>
+                                <th class="text-center table-bordered" style="width:200px; vertical-align: middle; border: 1px solid #000000;">Nro. Expediente Importación</th>
                                 <th class="text-center table-bordered" style="width:120px; vertical-align: middle; border: 1px solid #000000; ">Tipo Prov.</th>
                                 <th class="text-center table-bordered" style="width:150px; vertical-align: middle; border: 1px solid #000000; ">Nro. de Factura</th>
                                 <th class="text-center table-bordered" style="width:200px; vertical-align: middle; border: 1px solid #000000;">Nro. de Control</th>
@@ -73,22 +79,23 @@
                                 <th class="text-center table-bordered" style="width:200px; vertical-align: middle; border: 1px solid #000000;">Nro. Factura Afectada</th>
                                 <th class="text-center table-bordered" style="width:200px; vertical-align: middle; border: 1px solid #000000;">Total Compras con IVA</th>
                                 <th class="text-center table-bordered" style="width:200px; vertical-align: middle; border: 1px solid #000000;">Compras sin Derecho a Crédito</th>
-                                <th class="text-center table-bordered" style="width:200px; vertical-align: middle; border: 1px solid #000000;">Base Imponible Alicuota General</th>
+                                <th class="text-center table-bordered" style="width:200px; vertical-align: middle; border: 1px solid #000000;">Base Imponible</th>
                                 <th class="text-center table-bordered" style="width:200px; vertical-align: middle; border: 1px solid #000000;">% Alicuota General</th>
                                 <th class="text-center table-bordered" style="width:200px; vertical-align: middle; border: 1px solid #000000;">Impuesto (I.V.A) Alicuota General</th>
                                 <th class="text-center table-bordered" style="width:200px; vertical-align: middle; border: 1px solid #000000;">Base Imponible Alicuota Reducida</th>
+<!--
                                 <th class="text-center table-bordered" style="width:200px; vertical-align: middle; border: 1px solid #000000;">% Alicuota Reducida</th>
                                 <th class="text-center table-bordered" style="width:200px; vertical-align: middle; border: 1px solid #000000;">Impuesto (I.V.A) Alicuota Reducida</th>
                                 <th class="text-center table-bordered" style="width:200px; vertical-align: middle; border: 1px solid #000000;">Base Imponible Alicuota Adicional</th>
                                 <th class="text-center table-bordered" style="width:200px; vertical-align: middle; border: 1px solid #000000;">% Alicuota Adicional</th>
                                 <th class="text-center table-bordered" style="width:200px; vertical-align: middle; border: 1px solid #000000;">Impuesto (I.V.A) Alicuota Adicional</th>
-                                <th class="text-center table-bordered" style="width:200px; vertical-align: middle; border: 1px solid #000000;">Base Imponible Alicuota General</th>
+-->
+                                <th class="text-center table-bordered" style="width:200px; vertical-align: middle; border: 1px solid #000000;">Base Imponible (Compras importacion)</th>
                                 <th class="text-center table-bordered" style="width:200px; vertical-align: middle; border: 1px solid #000000;">% Alicuota General</th>
                                 <th class="text-center table-bordered" style="width:200px; vertical-align: middle; border: 1px solid #000000;">Impuesto (I.V.A) Alicuota General</th>
-                                <th class="text-center table-bordered" style="width:200px; vertical-align: middle; border: 1px solid #000000;">Nro. Planilla Importación</th>
-                                <th class="text-center table-bordered" style="width:200px; vertical-align: middle; border: 1px solid #000000;">Nro. Expediente Importación</th>
-                                <th class="text-center table-bordered" style="width:200px; vertical-align: middle; border: 1px solid #000000;">Nro. de Comprobante</th>
                                 <th class="text-center table-bordered" style="width:250px; vertical-align: middle; border: 1px solid #000000;">IVA Ret (Vend.)</th>
+                                <th class="text-center table-bordered" style="width:200px; vertical-align: middle; border: 1px solid #000000;">Nro. de Comprobante</th>
+                               
 
                             </tr>
                           </thead>
@@ -108,6 +115,12 @@
                                 </td>
                                 <td class="text-center table-bordered" style=" border: 1px solid #000000;">
                                     <span t-esc="o['partner_name']"/><!-- Nombre razon social-->
+                                </td>
+                                <td class="text-center table-bordered" style=" border: 1px solid #000000;">
+                                    <p><span t-esc="o['nro_planilla']"/></p><!-- Nro. Planilla de importación-->
+                                </td>
+                                <td class="text-center table-bordered" style=" border: 1px solid #000000;">
+                                    <p><span t-esc="o['nro_expediente']"/></p> <!-- Nro. expediente de importación-->
                                 </td>
                                 <td class="text-center table-bordered" style=" border: 1px solid #000000; font-size:8px;">
                                     <span t-esc="o['people_type']"/><!-- tipo de proveedor-->
@@ -163,21 +176,31 @@
                                 <td class="text-center table-bordered" style=" border: 1px solid #000000;">
                                     <span t-esc="'{0:,.2f}'.format(o['vat_reduced_base']).replace(',', 'X').replace('.', ',').replace('X', '.')"/><!-- base Imponible Alicuota Reducida-->
                                 </td>
+                                
+                                
+                                
+                                
+                                
+<!--
                                 <td class="text-center table-bordered" style=" border: 1px solid #000000;">
-                                    <span t-esc="o['vat_reduced_rate']"/>%<!-- % Alicuota Reducida-->
+                                    <span t-esc="o['vat_reduced_rate']"/>
                                 </td>
                                 <td class="text-center table-bordered" style=" border: 1px solid #000000;">
-                                    <span t-esc="'{0:,.2f}'.format(o['vat_reduced_tax']).replace(',', 'X').replace('.', ',').replace('X', '.')"/><!-- Impuesto(IVA) Alicuota reducida-->
+                                    <span t-esc="'{0:,.2f}'.format(o['vat_reduced_tax']).replace(',', 'X').replace('.', ',').replace('X', '.')"/>
                                 </td>
                                 <td class="text-center table-bordered" style=" border: 1px solid #000000;">
-                                    <span t-esc="'{0:,.2f}'.format(o['vat_additional_base']).replace(',', 'X').replace('.', ',').replace('X', '.')"/><!-- base Imponible Alicuota Adicional-->
+                                    <span t-esc="'{0:,.2f}'.format(o['vat_additional_base']).replace(',', 'X').replace('.', ',').replace('X', '.')"/>
                                 </td>
                                 <td class="text-center table-bordered" style=" border: 1px solid #000000;">
-                                    <span t-esc="o['vat_additional_rate']"/>%<!-- % Alicuota Adicional-->
+                                    <span t-esc="o['vat_additional_rate']"/>
                                 </td>
                                 <td class="text-center table-bordered" style=" border: 1px solid #000000;">
-                                    <span t-esc="'{0:,.2f}'.format(o['vat_additional_tax']).replace(',', 'X').replace('.', ',').replace('X', '.')"/><!-- Impuesto(IVA) Alicuota Adicional-->
+                                    <span t-esc="'{0:,.2f}'.format(o['vat_additional_tax']).replace(',', 'X').replace('.', ',').replace('X', '.')"/>
                                 </td>
+                                
+-->
+                                
+                                
                                 <td class="text-center table-bordered" style=" border: 1px solid #000000;">
                                     <span t-esc="'{0:,.2f}'.format(o['vat_general_base_importaciones']).replace(',', 'X').replace('.', ',').replace('X', '.')"/><!-- base Imponible Alicuota General IMPORTACIONES-->
                                 </td>
@@ -187,18 +210,19 @@
                                 <td class="text-center table-bordered" style=" border: 1px solid #000000;">
                                     <span t-esc="'{0:,.2f}'.format(o['vat_general_tax_importaciones']).replace(',', 'X').replace('.', ',').replace('X', '.')"/><!-- Impuesto(IVA) Alicuota General IMPORTACIONES-->
                                 </td>
-                                <td class="text-center table-bordered" style=" border: 1px solid #000000;">
-                                    <p><span t-esc="o['nro_planilla']"/></p><!-- Nro. Planilla de importación-->
-                                </td>
-                                <td class="text-center table-bordered" style=" border: 1px solid #000000;">
-                                    <p><span t-esc="o['nro_expediente']"/></p> <!-- Nro. expediente de importación-->
-                                </td>
-                                <td class="text-center table-bordered" style=" border: 1px solid #000000;">
-                                    <span t-esc="o['wh_number']"/><!-- Nro. de Comprobante de retención-->
-                                </td>
+
+
+
                                 <td class="text-center table-bordered" style=" border: 1px solid #000000;">
                                     <span t-esc="'{0:,.2f}'.format(o['get_wh_vat']).replace(',', 'X').replace('.', ',').replace('X', '.')"/><!-- IVA Retenido dl Vendedor-->
                                 </td>
+
+                                <td class="text-center table-bordered" style=" border: 1px solid #000000;">
+                                    <span t-esc="o['wh_number']"/><!-- Nro. de Comprobante de retención-->
+                                </td>
+
+
+
                               </tr>
                                    <t t-set="contador" t-value="contador+1"/>
                             </t>
@@ -207,7 +231,7 @@
                                   <td rowspan="1"><p> &amp;nbsp;</p></td>
                               </tr>
                               <tr>
-                                  <td colspan="10"></td>
+                                  <td colspan="12"></td>
                                   <td class="text-center table-bordered" style="background-color:#A4A4A4;color:#000000; border: 1px solid #000000;">
                                       <p>TOTALES:</p>
                                   </td>
@@ -222,17 +246,21 @@
                                   </td>
                                   <td class="text-center table-bordered" style="background-color:#A4A4A4;color:#000000; border: 1px solid #000000;">
                                   </td>
+
+
                                   <td class="text-center table-bordered" style="background-color:#A4A4A4;color:#000000; border: 1px solid #000000;">
                                       <span t-esc="'{0:,.2f}'.format(sum_vat_general_tax).replace(',', 'X').replace('.', ',').replace('X', '.')"/>
                                   </td>
                                   <td class="text-center table-bordered" style="background-color:#A4A4A4;color:#000000; border: 1px solid #000000;">
                                         <span t-esc="'{0:,.2f}'.format(sum_vat_reduced_base).replace(',', 'X').replace('.', ',').replace('X', '.')"/>
                                   </td>
+
                                   <td class="text-center table-bordered" style="background-color:#A4A4A4;color:#000000; border: 1px solid #000000;">
+                                      <span t-esc="'{0:,.2f}'.format(sum_vat_general_base_importaciones).replace(',', 'X').replace('.', ',').replace('X', '.')"/>
                                   </td>
                                   <td class="text-center table-bordered" style="background-color:#A4A4A4;color:#000000; border: 1px solid #000000;">
-                                        <span t-esc="'{0:,.2f}'.format(sum_vat_reduced_tax).replace(',', 'X').replace('.', ',').replace('X', '.')"/>
                                   </td>
+<!--
                                   <td class="text-center table-bordered" style="background-color:#A4A4A4;color:#000000; border: 1px solid #000000;">
                                         <span t-esc="'{0:,.2f}'.format(sum_vat_additional_base).replace(',', 'X').replace('.', ',').replace('X', '.')"/>
                                   </td>
@@ -246,17 +274,17 @@
                                   </td>
                                   <td class="text-center table-bordered" style="background-color:#A4A4A4;color:#000000; border: 1px solid #000000;">
                                   </td>
+-->
                                   <td class="text-center table-bordered" style="background-color:#A4A4A4;color:#000000; border: 1px solid #000000;">
                                       <span t-esc="'{0:,.2f}'.format(sum_vat_general_tax_importaciones).replace(',', 'X').replace('.', ',').replace('X', '.')"/>
                                   </td>
-                                  <td class="text-center table-bordered" style="background-color:#A4A4A4;color:#000000; border: 1px solid #000000;">
-                                  </td>
-                                  <td class="text-center table-bordered" style="background-color:#A4A4A4;color:#000000; border: 1px solid #000000;">
-                                  </td>
-                                  <td class="text-center table-bordered" style="background-color:#A4A4A4;color:#000000; border: 1px solid #000000;">
-                                  </td>
+
+
                                   <td class="text-center table-bordered" style="background-color:#A4A4A4;color:#000000; border: 1px solid #000000;">
                                      <span t-esc="'{0:,.2f}'.format(sum_get_wh_vat).replace(',', 'X').replace('.', ',').replace('X', '.')"/>
+                                  </td>
+
+                                  <td class="text-center table-bordered" style="background-color:#A4A4A4;color:#000000; border: 1px solid #000000;">
                                   </td>
                               </tr>
                           </tbody>

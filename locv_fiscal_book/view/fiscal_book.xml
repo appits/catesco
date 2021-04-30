@@ -136,34 +136,44 @@ string="Invoice"
                         <field name="fbl_ids" nolabel="1" colspan="4" readonly="True">
                             <tree string="Lineas de Libro Fiscal">
                                 <field name="rank"/>
-                                <field name="doc_type"/>
                                 <field name="emission_date"/>
-                                <field name="ctrl_number"/>
-                                <field name="invoice_number"/>
-                                <field name="affected_invoice"/>
-                                <field name="affected_invoice_date"/>
-                                <field name="n_ultima_factZ"/>
-                                <field name="partner_name"/>
                                 <field name="partner_vat"/>
-                                <field name="people_type"/>
+                                <field name="partner_name"/>
+                                <field name="doc_type"/>
+                                <field name="invoice_number"/>
+                                <field name="ctrl_number"/>
                                 <field name="void_form"/>
+                                <field name="affected_invoice"/>
+<!--
+                                <field name="n_ultima_factZ"/>
+                                <field name="people_type"/>
+-->
+
+<!--
                                 <field name="custom_statement"/>
                                 <field name="imex_date"/>
                                 <field name="fiscal_printer"/>
                                 <field name="z_report"/>
+-->
                                 <field name="total_with_iva" sum=""/>
+<!--
                                 <field name="vat_sdcf" sum=""/>
+-->
                                 <field name="vat_exempt" sum=""/>
                                 <field name="vat_general_base" sum=""/>
                                 <field name="vat_general_tax" sum=""/>
+<!--
                                 <field name="vat_reduced_base" sum=""/>
                                 <field name="vat_reduced_tax" sum=""/>
                                 <field name="vat_additional_base" sum=""/>
                                 <field name="vat_additional_tax" sum=""/>
+-->
                                 <field name="wh_number"/>
+<!--
                                 <field name="wh_rate"/>
                                 <field name="get_wh_vat" sum=""/>
                                 <field name="get_wh_debit_credit" sum=""/>
+-->
                             </tree>
                         </field>
                     </page>
@@ -344,31 +354,45 @@ string="Invoice"
                         <field name="fbl_ids" nolabel="1" colspan="4" readonly="True" force_save="1">
                             <tree string="Lineas de Libro Fiscal">
                                 <field name="rank"/>
-                                <field name="doc_type"/>
                                 <field name="emission_date"/>
-                                <field name="ctrl_number"/>
-                                <field name="invoice_number"/>
-                                <field name="affected_invoice"/>
-                                <field name="affected_invoice_date"/>
-                                <field name="partner_name"/>
                                 <field name="partner_vat"/>
+                                <field name="partner_name"/>
+
+
+                                <field name="doc_type"/>
+                                
+                                <field name="invoice_number"/>
+                                <field name="ctrl_number"/>
+                                <field name="void_form"/>
+                                <field name="affected_invoice"/>
+<!--
+
+                                <field name="affected_invoice_date"/>
+
                                 <field name="people_type"/>
+
                                 <field name="imex_date"/>
                                 <field name="custom_statement"/>
-                                <field name="void_form"/>
+-->
                                 <field name="total_with_iva" sum=""/>
                                 <field name="vat_sdcf" sum=""/>
                                 <field name="vat_exempt" sum=""/>
                                 <field name="vat_general_base" sum=""/>
                                 <field name="vat_general_tax" sum=""/>
+<!--
                                 <field name="vat_reduced_base" sum=""/>
                                 <field name="vat_reduced_tax" sum=""/>
                                 <field name="vat_additional_base" sum=""/>
                                 <field name="vat_additional_tax" sum=""/>
-                                <field name="wh_number"/>
+-->
+                                
+                                
+<!--
                                 <field name="wh_rate"/>
                                 <field name="get_wh_vat" sum=""/>
                                 <field name="get_wh_debit_credit" sum=""/>
+-->
+                                <field name="wh_number"/>
                             </tree>
                         </field>
                     </page>
