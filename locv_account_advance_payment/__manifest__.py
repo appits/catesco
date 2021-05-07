@@ -18,7 +18,8 @@ Colaborador: Maria Carreno
              'view/account_advance_payment.xml',
              'data/sequence_advance_data.xml',
              'view/res_partner_view.xml',
-             'view/invoice_view.xml'
+             'view/invoice_view.xml',
+             'report/move_payment.xml',
     ],
     #depends,  es una lista donde se agregan los módulos que deberían estar instalados (Módulos dependencia) para que el modulo pueda ser instalado en Odoo.
     'depends': ['base','web','mail','account'],
